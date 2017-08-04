@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="tensorflow-android-1.2.0-preview">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.android/build-cache/016692bf260af76eeb311b3f49a018f6e1bbbffd/output/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.android/build-cache/016692bf260af76eeb311b3f49a018f6e1bbbffd/output/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
