@@ -9,10 +9,8 @@ import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.os.Trace;
 import android.util.Size;
-import android.util.TypedValue;
 import android.view.Display;
 
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
@@ -21,7 +19,10 @@ import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 
 /**
- * Created by steffen on 19.10.17.
+ * Created by See-- on 19.10.17.
+ * Mostly copied from:
+ * https://codelabs.developers.google.com/codelabs/tensorflow-style-transfer-android/index.html?index=..%2F..%2Findex#0
+ * https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2/index.html?index=..%2F..%2Findex#0
  */
 
 public class FCNPredictActivity extends CameraActivity
@@ -36,13 +37,10 @@ public class FCNPredictActivity extends CameraActivity
   private static final String INPUT_NODE = "rgb_preview_input";
   private static final String OUTPUT_NODE = "rgb_output_blended";
 
-  private static final float TEXT_SIZE_DIP = 12;
 
   private static final Size DESIRED_PREVIEW_SIZE = new Size(1280, 720);
   private static final int INPUT_HEIGHT = 720;
   private static  final int INPUT_WIDTH = 1280;
-  private static  final int OUTPUT_HEIGHT = 720;
-  private static final int OUTPUT_WIDTH = 1280;
   private boolean initializedBuffers = false;
   private Integer sensorOrientation;
   private int previewWidth = 0;
@@ -52,22 +50,17 @@ public class FCNPredictActivity extends CameraActivity
   // converted bytes
   private int[] rgbBytes = null;
   private Bitmap rgbFrameBitmap = null;
-  private Bitmap rgbFrameBitmapCopy = null;
   // input to the network
   private Bitmap croppedBitmap = null;
 
   private int[] intValues;
   private float[] floatValues;
-  private int frameNum = 0;
-
-  private Bitmap cropCopyBitmap;
   private Bitmap textureCopyBitmap;
 
   private boolean computing = false;
 
   private Matrix frameToCropTransform;
   private Matrix cropToFrameTransform;
-  private long lastProcessingTimeMs;
 
   @Override
   public void onCreate(final Bundle savedInstanceState) {
@@ -86,14 +79,7 @@ public class FCNPredictActivity extends CameraActivity
 
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
-    LOGGER.d("Initializing inferenceINterface!");
     inferenceInterface = new TensorFlowInferenceInterface(getAssets(), MODEL_FILE);
-    LOGGER.d("Done - Initializing inferenceINterface!");
-
-    final float textSizePx =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
-
     previewWidth = size.getWidth();
     previewHeight = size.getHeight();
 
@@ -116,25 +102,12 @@ public class FCNPredictActivity extends CameraActivity
   private void renderView(final Canvas canvas) {
     LOGGER.d("renderView");
     final Bitmap texture = textureCopyBitmap;
-    // final Bitmap texture = rgbFrameBitmap;
 
     if(texture != null) {
       final Matrix matrix = new Matrix();
-      /*final Matrix matrix = ImageUtils.getTransformationMatrix(
-          texture.getWidth(), texture.getHeight(),
-          previewWidth, previewHeight,
-          0, true);  // sensorOrientation
-      */
-      float scaleFactor = Math.min(
-          (float) canvas.getWidth() / texture.getWidth(),
-          (float) canvas.getHeight() / texture.getHeight());
       float scaleWidth = (float) canvas.getWidth() / texture.getWidth();
       float scaleHeight = (float) canvas.getHeight() / texture.getHeight();
       matrix.postScale(scaleWidth, scaleHeight);
-
-      LOGGER.d("Canvas: " + Integer.toString(canvas.getHeight()) + "x" + Integer.toString(canvas.getWidth()));
-      LOGGER.d("texture: " + Integer.toString(texture.getHeight()) + "x" + Integer.toString(texture.getWidth()));
-
       canvas.drawBitmap(texture, matrix, new Paint());  // matrix
     }
   }
@@ -154,7 +127,6 @@ public class FCNPredictActivity extends CameraActivity
         return;
       }
 
-      // TODO(see--): we don't have to reset every time
       if(!initializedBuffers) {
         rgbBytes = new int[previewWidth * previewHeight];
         rgbFrameBitmap = Bitmap.createBitmap(
@@ -191,7 +163,6 @@ public class FCNPredictActivity extends CameraActivity
       final int yRowStride = planes[0].getRowStride();
       final int uvRowStride = planes[1].getRowStride();
       final int uvPixelStride = planes[1].getPixelStride();
-      LOGGER.d("before converting");
 
       ImageUtils.convertYUV420ToARGB8888(
           yuvBytes[0],
@@ -220,7 +191,6 @@ public class FCNPredictActivity extends CameraActivity
         rgbBytes, 0, previewWidth, 0, 0,
         previewWidth, previewHeight);
 
-    // put the big rgb image (720 x 1280) in the small rgb image (160 x 576)
     final Canvas canvas = new Canvas(croppedBitmap);
     canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
 
@@ -228,14 +198,8 @@ public class FCNPredictActivity extends CameraActivity
         new Runnable() {
           @Override
           public void run() {
-            cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);  // croppedBitmap
-
-            final long startTime = SystemClock.uptimeMillis();
-            predict(croppedBitmap);  // croppedBitmap
-            lastProcessingTimeMs = SystemClock.uptimeMillis();
-
-            textureCopyBitmap = Bitmap.createBitmap(croppedBitmap);  // croppedBitmap
-
+            predict(croppedBitmap);
+            textureCopyBitmap = Bitmap.createBitmap(croppedBitmap);
             requestRender();
             computing = false;
           }
@@ -243,10 +207,7 @@ public class FCNPredictActivity extends CameraActivity
     Trace.endSection();
   }
 
-  // we get an input image
   private void predict(final Bitmap bitmap) {
-    ++frameNum;
-
     // put the bitmap pixels into intValues
     bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
     LOGGER.d("Normalizing image!");
@@ -262,12 +223,12 @@ public class FCNPredictActivity extends CameraActivity
     inferenceInterface.feed(
         INPUT_NODE,
         floatValues,
-        1,  // N
-        bitmap.getHeight(),  // H
-        bitmap.getWidth(),  // W
-        3);  // C
+        1,
+        bitmap.getHeight(),
+        bitmap.getWidth(),
+        3);
 
-    // sess.run ...
+    // sess.run() ...
     inferenceInterface.run(new String[] {OUTPUT_NODE}, isDebug());
     inferenceInterface.fetch(OUTPUT_NODE, floatValues);
     // argmax, blending etc. is all done inside the graph
@@ -281,5 +242,4 @@ public class FCNPredictActivity extends CameraActivity
     }
     bitmap.setPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
   }
-
 }

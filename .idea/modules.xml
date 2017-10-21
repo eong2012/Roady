@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MobileNet-App.iml" filepath="$PROJECT_DIR$/MobileNet-App.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Roady.iml" filepath="$PROJECT_DIR$/Roady.iml" />
     </modules>
   </component>
 </project>
