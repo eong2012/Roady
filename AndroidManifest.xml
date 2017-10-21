@@ -27,15 +27,16 @@
         android:minSdkVersion="21"
         android:targetSdkVersion="25" />
 
+    <!--                   android:screenOrientation="portrait" -->
     <application android:allowBackup="true"
         android:debuggable="true"
         android:label="@string/app_name"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:theme="@style/MaterialTheme">
 
-        <activity android:name="org.tensorflow.demo.ClassifierActivity"
-                  android:screenOrientation="portrait"
-                  android:label="@string/activity_name_classification">
+        <activity android:name="org.tensorflow.demo.FCNPredictActivity"
+                  android:screenOrientation="landscape"
+                  android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

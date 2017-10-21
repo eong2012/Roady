@@ -120,6 +120,25 @@ public class ImageUtils {
         }
     }
 
+    public static void convertYUV420ToABGR8888(byte[] yData, byte[] uData, byte[] vData, int width, int height,
+                                               int yRowStride, int uvRowStride, int uvPixelStride, int[] out) {
+        int i = 0;
+        for (int y = 0; y < height; y++) {
+            int pY = yRowStride * y;
+            int uv_row_start = uvRowStride * (y >> 1);
+            int pU = uv_row_start;
+            int pV = uv_row_start;
+
+            for (int x = 0; x < width; x++) {
+                int uv_offset = (x >> 1) * uvPixelStride;
+                out[i++] = YUV2BGR(
+                    convertByteToInt(yData, pY + x),
+                    convertByteToInt(uData, pU + uv_offset),
+                    convertByteToInt(vData, pV + uv_offset));
+            }
+        }
+    }
+
     private static int convertByteToInt(byte[] arr, int pos) {
         return arr[pos] & 0xFF;
     }
@@ -149,6 +168,33 @@ public class ImageUtils {
         nB = (nB >> 10) & 0xff;
 
         return 0xff000000 | (nR << 16) | (nG << 8) | nB;
+    }
+
+    private static int YUV2BGR(int nY, int nU, int nV) {
+        nY -= 16;
+        nU -= 128;
+        nV -= 128;
+        if (nY < 0) nY = 0;
+
+        // This is the floating point equivalent. We do the conversion in integer
+        // because some Android devices do not have floating point in hardware.
+        // nR = (int)(1.164 * nY + 2.018 * nU);
+        // nG = (int)(1.164 * nY - 0.813 * nV - 0.391 * nU);
+        // nB = (int)(1.164 * nY + 1.596 * nV);
+
+        int nR = (int) (1192 * nY + 1634 * nV);
+        int nG = (int) (1192 * nY - 833 * nV - 400 * nU);
+        int nB = (int) (1192 * nY + 2066 * nU);
+
+        nR = Math.min(kMaxChannelValue, Math.max(0, nR));
+        nG = Math.min(kMaxChannelValue, Math.max(0, nG));
+        nB = Math.min(kMaxChannelValue, Math.max(0, nB));
+
+        nR = (nR >> 10) & 0xff;
+        nG = (nG >> 10) & 0xff;
+        nB = (nB >> 10) & 0xff;
+
+        return 0xff000000 | (nB << 16) | (nG << 8) | nR;
     }
 
     private static void fillBytes(final Image.Plane[] planes, final byte[][] yuvBytes) {
