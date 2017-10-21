@@ -43,7 +43,7 @@ public class FCNPredictActivity extends CameraActivity
   private static  final int INPUT_WIDTH = 1280;
   private static  final int OUTPUT_HEIGHT = 720;
   private static final int OUTPUT_WIDTH = 1280;
-
+  private boolean initializedBuffers = false;
   private Integer sensorOrientation;
   private int previewWidth = 0;
   private int previewHeight = 0;
@@ -155,7 +155,7 @@ public class FCNPredictActivity extends CameraActivity
       }
 
       // TODO(see--): we don't have to reset every time
-      if(true) {
+      if(!initializedBuffers) {
         rgbBytes = new int[previewWidth * previewHeight];
         rgbFrameBitmap = Bitmap.createBitmap(
             previewWidth,
@@ -180,6 +180,7 @@ public class FCNPredictActivity extends CameraActivity
 
         intValues = new int[INPUT_HEIGHT * INPUT_WIDTH];
         floatValues = new float[INPUT_HEIGHT * INPUT_WIDTH * 3];
+        initializedBuffers = true;
       }
 
       computing = true;
