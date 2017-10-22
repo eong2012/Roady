@@ -10,3 +10,6 @@ Put your graph definition (`.pb`) in the `assets` directory and run the app. For
 **Note**: Most of the code is derived from these two codelabs:
 - [TensorFlow for Poets 2](https://codelabs.developers.google.com/codelabs/tensorflow-for-poets-2/index.html?index=..%2F..%2Findex#0)
 - [Android & TensorFlow: Artistic Style Transfer](https://codelabs.developers.google.com/codelabs/tensorflow-style-transfer-android/index.html?index=..%2F..%2Findex#0)
+
+### Get the app
+You can download the latest version of Roady from [Google Play](https://play.google.com/store/apps/details?id=org.steffen.roady).
