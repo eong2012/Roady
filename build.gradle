@@ -19,7 +19,6 @@ getProject().setBuildDir('gradleBuild')
 project.ext.ASSET_DIR = projectDir.toString() + '/assets'
 
 assert file(project.ext.ASSET_DIR + "/optimized.pb").exists()
-assert file(project.ext.ASSET_DIR + "/retrained_labels.txt").exists()
 
 buildscript {
     repositories {
